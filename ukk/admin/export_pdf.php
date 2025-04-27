@@ -23,7 +23,9 @@ if (!empty($tanggal_filter)) {
 }
 
 // Query untuk mengambil data laporan dengan filter tanggal dan kasir
-$sql = "SELECT idlaporan, kode_produk, nama_produk, nama_pelanggan, harga, qty, subtotal, waktu_transaksi, iduser FROM laporan" . $filter_query;
+$sql = "SELECT l.idlaporan, l.kode_produk, l.nama_produk, l.nama_pelanggan, l.harga, l.qty, l.subtotal, l.waktu_transaksi, l.iduser, p.harga_jual 
+        FROM laporan l 
+        LEFT JOIN produk p ON l.kode_produk = p.kode_produk" . $filter_query;
 
 $result = mysqli_query($c, $sql);
 
@@ -124,22 +126,24 @@ $pdf->Ln(5);
 $pdf->SetFont('helvetica', 'B', 10);
 $pdf->SetFillColor(240, 240, 240);
 $pdf->Cell(10, 10, 'No', 1, 0, 'C', true);
-$pdf->Cell(40, 10, 'Kasir', 1, 0, 'C', true);
-$pdf->Cell(40, 10, 'Pelanggan', 1, 0, 'C', true);
-$pdf->Cell(40, 10, 'Produk', 1, 0, 'C', true);
-$pdf->Cell(20, 10, 'Qty', 1, 0, 'C', true);
-$pdf->Cell(40, 10, 'Subtotal', 1, 1, 'C', true);
+$pdf->Cell(35, 10, 'Kasir', 1, 0, 'C', true);
+$pdf->Cell(35, 10, 'Pelanggan', 1, 0, 'C', true);
+$pdf->Cell(35, 10, 'Produk', 1, 0, 'C', true);
+$pdf->Cell(15, 10, 'Qty', 1, 0, 'C', true);
+$pdf->Cell(30, 10, 'Harga Satuan', 1, 0, 'C', true);
+$pdf->Cell(30, 10, 'Subtotal', 1, 1, 'C', true);
 
 // Table data
 $pdf->SetFont('helvetica', '', 10);
 $counter = 1;
 while ($row = mysqli_fetch_assoc($result)) {
     $pdf->Cell(10, 10, $counter, 1, 0, 'C');
-    $pdf->Cell(40, 10, getKasirName($row['iduser'], $c), 1, 0, 'L');
-    $pdf->Cell(40, 10, $row['nama_pelanggan'], 1, 0, 'L');
-    $pdf->Cell(40, 10, $row['nama_produk'], 1, 0, 'L');
-    $pdf->Cell(20, 10, $row['qty'], 1, 0, 'C');
-    $pdf->Cell(40, 10, 'Rp ' . number_format($row['subtotal'], 0, ',', '.'), 1, 1, 'R');
+    $pdf->Cell(35, 10, getKasirName($row['iduser'], $c), 1, 0, 'L');
+    $pdf->Cell(35, 10, $row['nama_pelanggan'], 1, 0, 'L');
+    $pdf->Cell(35, 10, $row['nama_produk'], 1, 0, 'L');
+    $pdf->Cell(15, 10, $row['qty'], 1, 0, 'C');
+    $pdf->Cell(30, 10, 'Rp ' . number_format($row['harga_jual'], 0, ',', '.'), 1, 0, 'R');
+    $pdf->Cell(30, 10, 'Rp ' . number_format($row['subtotal'], 0, ',', '.'), 1, 1, 'R');
     $counter++;
 }
 

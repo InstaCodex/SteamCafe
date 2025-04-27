@@ -74,26 +74,68 @@ if (isset($_POST['InputCart'])) {
     $row = mysqli_fetch_assoc($resultGetIDProduk);
     $idproduk = $row['idproduk']; // Use this variable for the product ID
 
+    // Check if there's an existing transaction with a different customer name
+    $existingTransaction = false;
+    $queryCheckExisting = "SELECT nama_pelanggan FROM transaksi LIMIT 1";
+    $resultCheckExisting = mysqli_query($c, $queryCheckExisting);
+    
+    if (mysqli_num_rows($resultCheckExisting) > 0) {
+        $rowExisting = mysqli_fetch_assoc($resultCheckExisting);
+        $existingCustomerName = $rowExisting['nama_pelanggan'];
+        
+        if ($existingCustomerName != $nama_pelanggan) {
+            $existingTransaction = true;
+        }
+    }
+
     if ($existingTransaction) {
         // Jika transaksi sudah ada, tampilkan popup bahwa meja telah digunakan
-        echo '<script>alert("Meja telah digunakan untuk transaksi lain.");</script>';
+        echo '<script>alert("Nama pelanggan harus sama untuk semua transaksi!");</script>';
     } else {
         // Validasi jumlah (Qty) tidak boleh kosong atau nol
         if (empty($qty) || $qty <= 0) {
             // Jika jumlah (Qty) kosong atau nol, tampilkan pesan kesalahan
             echo '<script>alert("Jumlah barang harus diisi dan tidak boleh nol!");</script>';
         } else {
-            // Panggil fungsi untuk memasukkan data transaksi ke dalam database, termasuk nama kasir dan ID pengguna
-            $inserted = insertTransaction($c, $iduser, $idproduk, $kode_produk, $nama_produk, $nama_pelanggan, $harga, $qty, $subtotal);
-            if ($inserted) {
-                // Jika berhasil dimasukkan, lakukan tindakan yang sesuai, misalnya memberikan pesan sukses atau mengarahkan pengguna ke halaman lain
-                echo '<script>alert("Data transaksi berhasil dimasukkan!");</script>';
-                // Redirect ke halaman yang sesuai
-                header('Location: transaksi.php');
-                exit(); // Penting untuk keluar dari skrip setelah melakukan redirect
+            // Cek apakah produk sudah ada dalam transaksi
+            $queryCheckProduct = "SELECT * FROM transaksi WHERE kode_produk = '$kode_produk'";
+            $resultCheckProduct = mysqli_query($c, $queryCheckProduct);
+            
+            if (mysqli_num_rows($resultCheckProduct) > 0) {
+                // Produk sudah ada, update qty dan subtotal
+                $rowProduct = mysqli_fetch_assoc($resultCheckProduct);
+                $existingQty = $rowProduct['qty'];
+                $existingSubtotal = $rowProduct['subtotal'];
+                $existingIdTransaksi = $rowProduct['idtransaksi'];
+                
+                // Hitung qty dan subtotal baru
+                $newQty = $existingQty + $qty;
+                $newSubtotal = $newQty * $harga;
+                
+                // Update transaksi yang ada
+                $queryUpdateTransaksi = "UPDATE transaksi SET qty = $newQty, subtotal = $newSubtotal WHERE idtransaksi = $existingIdTransaksi";
+                $resultUpdateTransaksi = mysqli_query($c, $queryUpdateTransaksi);
+                
+                if ($resultUpdateTransaksi) {
+                    echo '<script>alert("Jumlah produk berhasil diperbarui!");</script>';
+                    header('Location: transaksi.php');
+                    exit();
+                } else {
+                    echo '<script>alert("Gagal memperbarui jumlah produk.");</script>';
+                }
             } else {
-                // Jika gagal dimasukkan, berikan pesan kesalahan
-                echo '<script>alert("Gagal memasukkan data transaksi.");</script>';
+                // Produk belum ada, tambahkan sebagai transaksi baru
+                $inserted = insertTransaction($c, $iduser, $idproduk, $kode_produk, $nama_produk, $nama_pelanggan, $harga, $qty, $subtotal);
+                if ($inserted) {
+                    // Jika berhasil dimasukkan, lakukan tindakan yang sesuai, misalnya memberikan pesan sukses atau mengarahkan pengguna ke halaman lain
+                    echo '<script>alert("Data transaksi berhasil dimasukkan!");</script>';
+                    // Redirect ke halaman yang sesuai
+                    header('Location: transaksi.php');
+                    exit(); // Penting untuk keluar dari skrip setelah melakukan redirect
+                } else {
+                    // Jika gagal dimasukkan, berikan pesan kesalahan
+                    echo '<script>alert("Gagal memasukkan data transaksi.");</script>';
+                }
             }
         }
     }
@@ -157,29 +199,9 @@ if (isset($_POST['hapus_transaksi'])) {
             </div>
             <!-- Nav Item - Tables -->
             <li class="nav-item">
-                <a class="nav-link" href="index.php">
-                    <i class="	fas fa-tachometer-alt fa-fw"></i>
-                    <span>Dashboard</span></a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="produk.php">
-                    <i class="fas fa-shopping-cart fa-fw"></i>
-                    <span>Produk</span></a>
-            </li>
-            <li class="nav-item">
                 <a class="nav-link" href="transaksi.php">
                     <i class="fas fa-fw fa-desktop"></i>
                     <span>Transaksi</span></a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="laporan.php">
-                    <i class="fas fa-chart-bar fa-fw"></i>
-                    <span>Laporan</span></a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="pengguna.php">
-                    <i class="fas fa-users fa-fw"></i>
-                    <span>Pengguna</span></a>
             </li>
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
@@ -303,11 +325,11 @@ if (isset($_POST['hapus_transaksi'])) {
                                         </div>
                                         <div class="col-4 col-sm-4 col-md-4 col-lg-1 mb-3">
                                             <label class="small text-muted mb-1">Jumlah</label>
-                                            <input type="number" name="Cqty" id="Iqty" onchange="InputSub()" placeholder="0" class="form-control form-control-sm" required>
+                                            <input type="number" name="Cqty" id="Iqty" onchange="InputSub()" placeholder="0" class="form-control form-control-sm" required min="1">
                                         </div>
                                         <div class="col-sm-4 col-md-4 col-lg-3 mb-3">
                                             <label class="small text-muted mb-1">Nama Pelanggan</label>
-                                            <input type="text" name="nama_pelanggan" pattern="[A-Za-z\s]+" title="Hanya huruf yang diperbolehkan" id="nama_pelanggan" onchange="InputSub()" placeholder="Nama Pelanggan" class="form-control form-control-sm" required>
+                                            <input type="text" name="nama_pelanggan" pattern="[A-Za-z\s]+" title="Hanya huruf yang diperbolehkan" id="nama_pelanggan" placeholder="Nama Pelanggan" class="form-control form-control-sm" required>
                                         </div>
                                         <div class="col-sm-8 col-md-8 col-lg-3 mb-3">
                                             <label class="small text-muted mb-1">Subtotal</label>
@@ -482,6 +504,14 @@ if (isset($_POST['hapus_transaksi'])) {
         function InputSub() {
             var harga_jual = parseInt(document.getElementById('harga_jual').value);
             var jumlah_beli = parseInt(document.getElementById('Iqty').value);
+            
+            // Validasi jumlah tidak boleh negatif
+            if (jumlah_beli <= 0) {
+                alert("Jumlah barang tidak boleh negatif atau nol!");
+                document.getElementById('Iqty').value = 1; // Set default value to 1
+                jumlah_beli = 1;
+            }
+            
             var jumlah_harga = harga_jual * jumlah_beli;
             document.getElementById('Isubtotal').value = jumlah_harga;
         };
@@ -524,6 +554,22 @@ if (isset($_POST['hapus_transaksi'])) {
 
         // Panggil fungsi InputSub saat nilai input jumlah barang berubah
         document.getElementById('Iqty').addEventListener('change', InputSub);
+        
+        // Setelah halaman dimuat, cek apakah sudah ada transaksi dan isi nama pelanggan
+        window.onload = function() {
+            <?php
+            // Cek apakah sudah ada transaksi
+            $queryCheckExisting = "SELECT nama_pelanggan FROM transaksi LIMIT 1";
+            $resultCheckExisting = mysqli_query($c, $queryCheckExisting);
+            
+            if (mysqli_num_rows($resultCheckExisting) > 0) {
+                $rowExisting = mysqli_fetch_assoc($resultCheckExisting);
+                $existingCustomerName = $rowExisting['nama_pelanggan'];
+                echo "document.getElementById('nama_pelanggan').value = '" . $existingCustomerName . "';";
+                echo "document.getElementById('nama_pelanggan').readOnly = true;";
+            }
+            ?>
+        };
     </script>
 
 </body>

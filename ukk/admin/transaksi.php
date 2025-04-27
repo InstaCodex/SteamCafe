@@ -345,7 +345,7 @@ if (isset($_POST['hapus_transaksi'])) {
                                         </div>
                                         <div class="col-4 col-sm-4 col-md-4 col-lg-1 mb-3">
                                             <label class="small text-muted mb-1">Jumlah</label>
-                                            <input type="number" name="Cqty" id="Iqty" onchange="InputSub()" placeholder="0" class="form-control form-control-sm" required>
+                                            <input type="number" name="Cqty" id="Iqty" onchange="InputSub()" placeholder="0" class="form-control form-control-sm" required min="1">
                                         </div>
                                         <div class="col-sm-4 col-md-4 col-lg-3 mb-3">
                                             <label class="small text-muted mb-1">Nama Pelanggan</label>
@@ -524,6 +524,14 @@ if (isset($_POST['hapus_transaksi'])) {
         function InputSub() {
             var harga_jual = parseInt(document.getElementById('harga_jual').value);
             var jumlah_beli = parseInt(document.getElementById('Iqty').value);
+            
+            // Validasi jumlah tidak boleh negatif
+            if (jumlah_beli <= 0) {
+                alert("Jumlah barang tidak boleh negatif atau nol!");
+                document.getElementById('Iqty').value = 1; // Set default value to 1
+                jumlah_beli = 1;
+            }
+            
             var jumlah_harga = harga_jual * jumlah_beli;
             document.getElementById('Isubtotal').value = jumlah_harga;
         };

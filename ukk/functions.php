@@ -161,6 +161,12 @@ $produkDataJSON = json_encode($produkData);
 
 // Fungsi untuk memasukkan data transaksi ke dalam database
 function insertTransaction($c, $iduser, $idproduk, $kode_produk, $nama_produk, $nama_pelanggan, $harga, $qty, $subtotal) {
+    // Validasi qty tidak boleh negatif
+    if ($qty <= 0) {
+        echo '<script>alert("Jumlah barang tidak boleh negatif atau nol!");</script>';
+        return false;
+    }
+    
     $query = "INSERT INTO transaksi (iduser, idproduk, kode_produk, nama_produk, nama_pelanggan, harga, qty, subtotal) 
               VALUES ('$iduser', '$idproduk', '$kode_produk', '$nama_produk', '$nama_pelanggan', '$harga', '$qty', '$subtotal')";
 
