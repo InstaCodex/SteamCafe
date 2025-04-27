@@ -9,4 +9,6 @@
 <img src="https://raw.githubusercontent.com/InstaCodex/InstaCodex/refs/heads/main/Assets/3.png" alt="Profile Image" width="100%">
 <img src="https://raw.githubusercontent.com/InstaCodex/InstaCodex/refs/heads/main/Assets/4.png" alt="Profile Image" width="100%">
 <img src="https://raw.githubusercontent.com/InstaCodex/InstaCodex/refs/heads/main/Assets/5.png" alt="Profile Image" width="100%">
+![image](https://github.com/user-attachments/assets/c836d79e-8589-4be0-bcf6-020e80d4de72)
+
 
